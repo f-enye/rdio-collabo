@@ -19,6 +19,7 @@ webservice.authenticate(sys.argv[2], sys.argv[3])
 # Syntax: 'regular expression', 'class to be called'
 urls = (
   '/',            'index',
+  '/add/(.+)',    'add',
   '/search/(.+)', 'search'
 )
 
@@ -31,6 +32,10 @@ render = web.template.render('templates/');
 class index:
   def GET(self):
     return render.index()
+
+class add:
+  def POST(self, id):
+    return webservice.add(id);
 
 class search:
   def POST(self, query):

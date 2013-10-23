@@ -9,30 +9,46 @@ $(document).ready(function() {
 
 });
 
-/* Object to house all collaborative playlist functions */
+/* Object to house all functions */
 app = {
   search: function(query){
     var self = this;
     $.post("/search/" + query, function(data, textStatus){
       var data = $.parseJSON(data);
-      self.printResults(data);
+      view.printResults(data);
+      self.handleAdd();
     })
   },
 
-  printResults: function(data){
-    $("#results").text("");
-    $.each(data, function(i, track) {
-      $("#results").append(i+": ");
-      var artist = track["artist"];
-      var name = track["name"];
-      var album = track["album"];
-      var art = track["icon"];
-      var id = track["key"];
-      $("#results").append("Artist: "+artist+"<br>");
-      $("#results").append("Name: "+name+"<br>");
-      $("#results").append("Album: "+album+"<br>");
-      $("#results").append("rdio identifier: "+id+"<br>");
-      $("#results").append("<img src='"+art+"'><br>");
+  handleAdd: function(){
+    $(".add").click(function(){
+      $.post("/add/" + this.id, function(data, textStatus){
+        console.log(textStatus);
+        console.log(data);
+        console.log("Id:" + this.id);
+      });
     })
+  }
+};
+
+view = {
+  printResults: function(data){
+    $("#results").html("<ul id='results-list'>");
+
+    $.each(data, function(i, track) {
+      var artist  = track["artist"];
+      var name    = track["name"];
+      var album   = track["album"];
+      var art     = track["icon"];
+      var id      = track["key"];
+
+      $("#results-list").append("<li><ul id='result-"       + i       + "'>");
+      $("#result-"  + i).append("<button class='add' id='"  + id      + "'>+</button><br>");
+      $("#result-"  + i).append("Artist: "                  + artist  + "<br>");
+      $("#result-"  + i).append("Name: "                    + name    + "<br>");
+      $("#result-"  + i).append("Album: "                   + album   + "<br>");
+      $("#result-"  + i).append("Rdio identifier: "         + id      + "<br>");
+      $("#result-"  + i).append("<img src='"                + art     + "'><br>");
+    });    
   }
 };

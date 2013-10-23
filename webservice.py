@@ -16,6 +16,11 @@ def authenticate(consumer_key, consumer_secret):
   consumer = oauth.Consumer(consumer_key, consumer_secret)
   client = oauth.Client(consumer)
 
+# Make API request to add song to a playlist
+def add(id):
+  # TODO
+  return 1
+  
 # Make API request to search for a song.
 def search(query):
   response, content = client.request('http://api.rdio.com/1/', 'POST', 
