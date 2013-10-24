@@ -9,8 +9,12 @@ $(document).ready(function() {
 
 });
 
-/* Object to house all functions */
+/* App deals with logic for making AJAX calls.
+View deals with displaying the page.
+These objects are tightly coupled. :| */
 app = {
+  playlist: [],
+
   search: function(query){
     var self = this;
     $.post("/search/" + query, function(data, textStatus){
@@ -21,17 +25,25 @@ app = {
   },
 
   handleAdd: function(){
+    var self = this;
     $(".add").click(function(){
       $.post("/add/" + this.id, function(data, textStatus){
         console.log(textStatus);
         console.log(data);
         console.log("Id:" + this.id);
+        self.playlist = data;
+        view.printPlaylist();
       });
     })
   }
 };
 
 view = {
+  printPlaylist: function(){
+    console.log(app.playlist);
+    $("#results").html("Song added to playlist.");
+  },
+
   printResults: function(data){
     $("#results").html("<ul id='results-list'>");
 

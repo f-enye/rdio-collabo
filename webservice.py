@@ -18,8 +18,8 @@ def authenticate(consumer_key, consumer_secret):
 
 # Make API request to add song to a playlist
 def add(id):
-  # TODO
-  return 1
+  # TODO -- add to an Rdio playlist
+  return '[{artist: "Zedd", song: "Clarity"}]'
   
 # Make API request to search for a song.
 def search(query):
