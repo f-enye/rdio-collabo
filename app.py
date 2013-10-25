@@ -18,9 +18,10 @@ webservice.authenticate(sys.argv[2], sys.argv[3])
 # A feature of the web.py framework.
 # Syntax: 'regular expression', 'class to be called'
 urls = (
-  '/',            'index',
-  '/add/(.+)',    'add',
-  '/search/(.+)', 'search'
+  '/',                  'index',
+  '/add/(.+)',          'add',
+  '/playlist/new/(.+)', 'new_playlist',
+  '/search/(.+)',       'search'
 )
 
 
@@ -32,6 +33,11 @@ render = web.template.render('templates/');
 class index:
   def GET(self):
     return render.index()
+
+class new_playlist:
+  def POST(self, name):
+    webservice.newPlaylist(name);
+    return render.playlist(name);
 
 class add:
   def POST(self, id):

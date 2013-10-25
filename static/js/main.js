@@ -1,11 +1,27 @@
 $(document).ready(function() {
 
+  /* Create a new playlist button: 
+  Makes AJAX call to request new empty playlist.*/
+  $("#create-playlist").submit(function(){
+    var name = $("#playlist-name").val();
+    app.createPlaylist(name);
+  })
+
+
+
+
+
   /* Search Button: Makes AJAX call to make search request */
   $("#search").click(function(){
     $("#results").text("Loading...");
     var query = $("#query").val();
     app.search(query);
   })
+
+
+
+
+
 
 });
 
@@ -14,6 +30,11 @@ View deals with displaying the page.
 These objects are tightly coupled. :| */
 app = {
   playlist: [],
+
+  createPlaylist: function(name){
+    console.log("Make request to create playlist called " + name + "...")
+    $("#create-playlist").attr('action', '/playlist/new/' + name);
+  },
 
   search: function(query){
     var self = this;
@@ -28,9 +49,6 @@ app = {
     var self = this;
     $(".add").click(function(){
       $.post("/add/" + this.id, function(data, textStatus){
-        console.log(textStatus);
-        console.log(data);
-        console.log("Id:" + this.id);
         self.playlist = data;
         view.printPlaylist();
       });
@@ -40,8 +58,17 @@ app = {
 
 view = {
   printPlaylist: function(){
-    console.log(app.playlist);
     $("#results").html("Song added to playlist.");
+    console.log(app.playlist);
+    $("#results").after("<ul id='playlist'>");
+    var playlist = $.parseJSON(app.playlist);
+    $.each(playlist, function(i, track) {
+      console.log(track['artist']);
+      console.log(track['song']);
+      $("#playlist").append("<li><ul id='playlist-"   + i       + "'>");
+      $("#playlist-" + i).append("Artist: "               + track['artist']  + "<br>");
+      $("#playlist-" + i).append("Song: "                 + track['song']    + "<br>");
+    })
   },
 
   printResults: function(data){
