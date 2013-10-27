@@ -7,10 +7,6 @@ $(document).ready(function() {
     app.createPlaylist(name);
   })
 
-
-
-
-
   /* Search Button: Makes AJAX call to make search request */
   $("#search").click(function(){
     $("#results").text("Loading...");
@@ -18,21 +14,15 @@ $(document).ready(function() {
     app.search(query);
   })
 
-
-
-
-
-
 });
 
 /* App deals with logic for making AJAX calls.
 View deals with displaying the page.
 These objects are tightly coupled. :| */
 app = {
-  playlist: [],
+  playlist: {},
 
   createPlaylist: function(name){
-    console.log("Make request to create playlist called " + name + "...")
     $("#create-playlist").attr('action', '/playlist/new/' + name);
   },
 
@@ -49,7 +39,7 @@ app = {
     var self = this;
     $(".add").click(function(){
       $.post("/add/" + this.id, function(data, textStatus){
-        self.playlist = data;
+        self.playlist = $.parseJSON(data);
         view.printPlaylist();
       });
     })
@@ -59,15 +49,12 @@ app = {
 view = {
   printPlaylist: function(){
     $("#results").html("Song added to playlist.");
-    console.log(app.playlist);
     $("#results").after("<ul id='playlist'>");
-    var playlist = $.parseJSON(app.playlist);
-    $.each(playlist, function(i, track) {
-      console.log(track['artist']);
-      console.log(track['song']);
-      $("#playlist").append("<li><ul id='playlist-"   + i       + "'>");
-      $("#playlist-" + i).append("Artist: "               + track['artist']  + "<br>");
-      $("#playlist-" + i).append("Song: "                 + track['song']    + "<br>");
+    $.each(app.playlist, function(id, track) {
+      $("#playlist").append("<li><ul id='playlist-" + id       + "'>");
+      $("#playlist-" + id).append("Song: "        + track['name']  + "<br>");
+      $("#playlist-" + id).append("Artist: "          + track['artist']    + "<br>");
+      $("#playlist-" + id).append("Album: "          + track['album']    + "<br>");
     })
   },
 
