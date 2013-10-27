@@ -43,8 +43,14 @@ def authenticate(CONSUMER_KEY, CONSUMER_SECRET):
 
 # Make API request to add song to a playlist
 def add(id):
+  keys = [id]
+  response, content = client.request('http://api.rdio.com/1/', 'POST',
+                                     urllib.urlencode({'method': 'get', 'keys': keys}))
+
+  print id
+
   # TODO -- add to an Rdio playlist
-  return '[{"artist": "Zedd", "song": "Clarity"}, {"artist": "Drake", "song": "Worst"}]'
+  return '[{"id": "' + id + '", "artist": "Zedd", "song": "Clarity"}, {"artist": "Drake", "song": "Worst"}]'
   
 def newPlaylist(name):
   return 1
