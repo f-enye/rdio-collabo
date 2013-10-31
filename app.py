@@ -13,21 +13,19 @@ if len(sys.argv) < 4 :
   sys.exit("ERROR: Syntax: " + sys.argv[0] + " <port> <consumer_key> <consumer_secret>")
 webservice.authenticate(sys.argv[2], sys.argv[3])
 
-
 # The URL structure of the entire application.
 # A feature of the web.py framework.
 # Syntax: 'regular expression', 'class to be called'
 urls = (
   '/',                  'index',
   '/add/(.+)',          'add',
-  '/playlist/new/(.+)', 'new_playlist',
+  '/playlists/new/(.+)', 'new_playlist',
+  '/playlists/nearby',  'nearby_playlist',
   '/search/(.+)',       'search'
 )
 
-
 # Tell web.py where to look to find page templates
 render = web.template.render('templates/');
-
 
 # Classes that handle URLs
 class index:
@@ -36,8 +34,13 @@ class index:
 
 class new_playlist:
   def POST(self, name):
-    webservice.newPlaylist(name);
-    return render.playlist(name);
+    webservice.newPlaylist(name)
+    data.newPlaylist(name)
+    return render.playlist(name)
+
+class nearby_playlist:
+  def POST(self):
+    return 0
 
 class add:
   def POST(self, id):

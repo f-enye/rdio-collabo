@@ -1,11 +1,13 @@
 $(document).ready(function() {
 
-  /* Create a new playlist button: 
-  Makes AJAX call to request new empty playlist.*/
+  /* New playlist button: Makes AJAX call to request new empty playlist.*/
   $("#create-playlist").submit(function(){
     var name = $("#playlist-name").val();
     app.createPlaylist(name);
   })
+
+  $("#nearby").text("Searching for nearby playlists...");
+  app.nearby();
 
   /* Search Button: Makes AJAX call to make search request */
   $("#search").click(function(){
@@ -23,7 +25,18 @@ app = {
   playlist: {},
 
   createPlaylist: function(name){
-    $("#create-playlist").attr('action', '/playlist/new/' + name);
+    $("#create-playlist").attr('action', '/playlists/new/' + name);
+  },
+
+  nearby: function(){
+    $.post("/playlists/nearby", function(data, textStatus){
+      console.log(textStatus);
+      console.log(data);
+      if(data == 0)
+        view.printNoNearby();
+      else
+        view.printNearby(data);
+    });
   },
 
   search: function(query){
@@ -76,5 +89,13 @@ view = {
       $("#result-"  + i).append("Rdio identifier: "         + id      + "<br>");
       $("#result-"  + i).append("<img src='"                + art     + "'><br>");
     });    
+  },
+
+  printNoNearby: function(){
+    $("#nearby").text("No nearby playlists found. :(");
+  },
+
+  printNearby: function(data){
+    $("#nearby").text(data);
   }
 };
