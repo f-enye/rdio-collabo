@@ -7,6 +7,7 @@ This is the application's main module.
 import sys              # For checking command-line arguments
 import web              # A simple-looking Python HTTP framework I just found
 import webservice       # An interface to an external music API.
+import data
   
 # The application requires Oauth authentication in order to make API calls.
 if len(sys.argv) < 4 :
@@ -40,7 +41,7 @@ class new_playlist:
 
 class nearby_playlist:
   def POST(self):
-    return 0
+    return data.nearby()
 
 class add:
   def POST(self, id):

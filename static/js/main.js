@@ -34,8 +34,10 @@ app = {
       console.log(data);
       if(data == 0)
         view.printNoNearby();
-      else
+      else{
+        data = $.parseJSON(data);
         view.printNearby(data);
+      }
     });
   },
 
@@ -96,6 +98,9 @@ view = {
   },
 
   printNearby: function(data){
-    $("#nearby").text(data);
+    $("#nearby").text("");
+    for (var i = 0; i < data["playlists"].length; i++) {
+      $("#nearby").append(data["playlists"][i].name + "<br>");
+    };
   }
 };
