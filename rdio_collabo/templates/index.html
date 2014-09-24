@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block bundles %}
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% endblock %}
+
+{% block content %}
+<h1>Start a Playlist</h1>
+
+<!-- Create a Playlist -->
+<form method="POST" id="create-playlist">
+<input id="playlist-name">
+<button type="submit">Create new playlist</button>
+</form>
+
+<h1>Nearby Playlists</h1>
+<div id="nearby"></div>
+<!-- TODO: List nearby playlists -->
+{% endblock %}

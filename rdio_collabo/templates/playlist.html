@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block bundles %}
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% endblock %}
+
+{% block content %}
+<!-- Display Playlist -->
+<h1>{{ name }}</h1>
+
+<!-- Search for a song -->
+<input id="query">
+<button id="search">Search</button>
+<div id="results"></div>
+{% endblock %}

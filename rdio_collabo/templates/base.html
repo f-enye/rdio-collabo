@@ -1,0 +1,36 @@
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <script type="text/javascript" src="{{ url_for('static', filename='jQuery/jquery-2.1.1.js') }}"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='bootstrap-3.2.0/js/bootstrap.js') }}"></script>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='bootstrap-3.2.0/css/bootstrap.min.css') }}">
+    <script type="text/javascript" ></script>
+    {% block bundles %}{% endblock %}
+    {% if title %}
+    <title>{{title}}</title>
+    {% else %}
+    <title>rdio-collabo</title>
+    {% endif %}
+</head>
+<body>
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+    <ul>
+    {% for message in messages %}
+        <li>{{ message }}</li>        
+    {% endfor %}
+    </ul>    
+    {% endif %}
+    {% endwith %}
+    <div class="container">
+        {% block content %}{% endblock %}
+    </div>
+</body>
+<footer>
+    <div class="container">
+        <div class="row">
+            <p>rdio-collabo man!</p>
+        </div>
+    </div>
+</footer>
+</html>
