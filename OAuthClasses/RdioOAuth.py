@@ -7,7 +7,59 @@ This module is an interface to an external music API.
 import oauth2 as oauth  # Oauth stuff for authentication
 import urllib, cgi      # Making POST requests to url
 import json             # Parsing responses from API
-from flask import redirect
+
+class RdioRequestTokenHandler(object):
+    """docstring for RdioRequestToken"""
+
+    request_token = None
+    client = None
+    consumer = None
+
+    # def __init__(self, arg):
+    #     super(RdioRequestToken, self).__init__()
+    #     self.arg = arg
+
+    def SetClientAndConsumer(self, client, consumer):
+        self.client = client
+        self.consumer = consumer
+
+    def GetLoginString(self, callback):
+        response, content = self.client.request('http://api.rdio.com/oauth/request_token', 'POST', urllib.urlencode({'oauth_callback':callback}))
+        parsed_content = dict(cgi.parse_qsl(content))
+        self.request_token = oauth.Token(parsed_content['oauth_token'], parsed_content['oauth_token_secret'])
+        return parsed_content["login_url"] + "?oauth_token=" + parsed_content['ouath']
+
+    def OAuthVerifierOOB(self):
+        oauthVerifier = raw_input('Enter the PIN / OAuth verifier: ').strip()
+        self.request_token.set_verifier(oauthVerifier)
+
+    def OAuthVerfier(self, oauthToken, oauthVerifier):
+         # associate the verifier with the request token
+        self.request_token.set_verifier(oauthToken + oauthVerifier)
+
+    def UpgradeRequestTokenToAccessToken(self):
+        # upgrade the request token to an access token
+        self.client = oauth.Client(self.consumer, self.request_token)
+        response, content = self.client.request('http://api.rdio.com/oauth/access_token', 'POST')
+        parsed_content = dict(cgi.parse_qsl(content))
+
+        # return access token
+        return oauth.Token(parsed_content['oauth_token'], parsed_content['oauth_token_secret'])
+
+class RdioAccessTokenHandler(object):
+    """docstring for RdioAccessTokenHandler"""
+    client = None
+    consumer = None 
+
+    def SetClientAndConsumer(self, client, consumer):
+        self.client = client
+        self.consumer = consumer 
+
+    def MakeAPIRequest(self, accessToken):
+        # make an authenticated API call
+        self.client = oauth.Client(self.consumer, accessToken)
+        response = self.client.request('http://api.rdio.com/1/', 'POST', urllib.urlencode({'method': 'currentUser'}))
+        return response
 
 class RdioAuthenticator(object):
     """docstring for RdioAuthenticator"""
@@ -17,43 +69,13 @@ class RdioAuthenticator(object):
     
     consumer = None
     client = None
-    request_token = None
-    oauth_verifier = None
-    access_token = None
 
     def BuildConsumerAndClient(self, consumerKey, consumerSecret):
         # create the OAuth consumer credentials.
         self.consumer = oauth.Consumer(consumerKey, consumerSecret)
 
         # build client basked on consumer credentials. 
-        self.client = oauth.Client(consumer)
-
-    def CallForRequestToken(self, callback):
-        # Get request token.
-        response, content = client.request('http://api.rdio.com/oauth/request_token', 'POST', urllib.urlencode({'oauth_callback':callback}))
-        parsed_content = dict(cgi.parse_qsl(content))
-        self.request_token = oauth.Token(parsed_content['oauth_token'], parsed_content['oauth_token_secret'])
-
-    def GetRedirectForLogin(self):
-        return redirect('%soauth_token=%s' % (self.request_token.key, self.request_token.secret))
-
-    def OAuthVerfier(self):
-        self.oauth_verifier = raw_input('Enter the PIN / OAuth verifier: ').strip()
-         # associate the verifier with the request token
-        request_token.set_verifier(oauth_verifier)
-
-    def UpgradeRequestTokenToAccessToken(self):
-        # upgrade the request token to an access token
-        self.client = oauth.Client(self.consumer, self.request_token)
-        response, content = client.request('http://api.rdio.com/oauth/access_token', 'POST')
-        parsed_content = dict(cgi.parse_qsl(content))
-        self.access_token = oauth.Token(parsed_content['oauth_token'], parsed_content['oauth_token_secret'])
-
-    def MakeAPIRequest(self):
-        # make an authenticated API call
-        self.client = oauth.Client(self.consumer, self.access_token)
-        response = self.client.request('http://api.rdio.com/1/', 'POST', urllib.urlencode({'method': 'currentUser'}))
-        print response
+        self.client = oauth.Client(self.consumer)
 
 # # Authenticate with OAuth
 # def authenticate(consumerKey, consumerSecret):

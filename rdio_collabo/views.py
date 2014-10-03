@@ -1,8 +1,10 @@
 from flask import render_template, url_for, redirect, g, request, flash, jsonify
 from flask.ext.login import login_user, logout_user, current_user, login_required
-from rdio_collabo import app, db, lm
+from rdio_collabo import app, db, lm, rdioOAuth
 from forms import LoginForm, SignupForm
 from models import User, Playlist
+from OAuthClasses.RdioOAuth import RdioRequestTokenHandler, RdioAccessTokenHandler
+import threading, webbrowser
 
 #rdio-collabo ported modules
 import webservice # An interface to an external music API.
@@ -13,7 +15,26 @@ import webservice # An interface to an external music API.
 @app.route('/index')
 # @login_required
 def Index():
-    return render_template("index.html")
+    requestTokenHandler = RdioRequestTokenHandler()
+    requestTokenHandler.SetClientAndConsumer(rdioOAuth.client, rdioOAuth.consumer)
+    threading.Timer(1.25, lambda: webbrowser.open(requestTokenHandler.GetLoginString('127.0.0.1:5000' + url_for('RdioLoginCallback')))).start()
+    # return render_template("index.html")
+
+@app.route('/rdio/login/callback')
+def RdioLoginCallback():
+    oauthToken = request.args.get('oauth_token')
+    oauthVerifer = request.args.get('oauth_verifier')
+
+    print oauthToken
+    print oauthVerifer
+
+    rdioOAuth.OAuthVerfier(oauthToken, oauthVerifer)
+    rdioOAuth.UpgradeRequestTokenToAccessToken()
+    # return redirect('Hello')
+
+@app.route('/hello')
+def Hello():
+    return "hello"
 
 @app.route('/playlists/new/<name>', methods=['POST'])
 def NewPlaylist(name):
@@ -35,7 +56,6 @@ def NearbyPlaylist():
 
 @app.route('/add/<song_id>', methods=['POST'])
 def add(song_id):
-    print webservice.add(song_id)
     return webservice.add(song_id)
 
 @app.route('/search/<query>', methods=['POST'])
