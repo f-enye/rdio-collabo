@@ -1,10 +1,8 @@
-from flask import render_template, url_for, redirect, g, request, flash, jsonify
+from flask import render_template, url_for, redirect, g, request, jsonify, session
 from flask.ext.login import login_user, logout_user, current_user, login_required
 from rdio_collabo import app, db, lm, rdioOAuth
-from forms import LoginForm, SignupForm
 from models import User, Playlist
-from OAuthClasses.RdioOAuth import RdioRequestTokenHandler, RdioAccessTokenHandler
-import threading, webbrowser
+from OAuthClasses.RdioOAuth import GetRequestTokenCredentials, CreateLoginString, CreateRequestToken, GetAccessTokenCredentials, RdioGetCurrentUser
 
 #rdio-collabo ported modules
 import webservice # An interface to an external music API.
@@ -13,28 +11,9 @@ import webservice # An interface to an external music API.
 #################Template Rendering Functions##############
 @app.route('/') 
 @app.route('/index')
-# @login_required
+@login_required
 def Index():
-    requestTokenHandler = RdioRequestTokenHandler()
-    requestTokenHandler.SetClientAndConsumer(rdioOAuth.client, rdioOAuth.consumer)
-    threading.Timer(1.25, lambda: webbrowser.open(requestTokenHandler.GetLoginString('127.0.0.1:5000' + url_for('RdioLoginCallback')))).start()
-    # return render_template("index.html")
-
-@app.route('/rdio/login/callback')
-def RdioLoginCallback():
-    oauthToken = request.args.get('oauth_token')
-    oauthVerifer = request.args.get('oauth_verifier')
-
-    print oauthToken
-    print oauthVerifer
-
-    rdioOAuth.OAuthVerfier(oauthToken, oauthVerifer)
-    rdioOAuth.UpgradeRequestTokenToAccessToken()
-    # return redirect('Hello')
-
-@app.route('/hello')
-def Hello():
-    return "hello"
+    return render_template('index.html')
 
 @app.route('/playlists/new/<name>', methods=['POST'])
 def NewPlaylist(name):
@@ -67,37 +46,7 @@ def Login():
     if g.user is not None and g.user.is_authenticated():
         return redirect(url_for('Index'))
 
-    form = LoginForm()
-    if form.validate_on_submit():
-        user_name = form.user_name.data
-        password = form.password.data
-
-        user = User.query.filter_by(user_name = user_name).first()
-        if user is not None and password == user.password:
-            login_user(user)
-            return redirect(request.args.get("next", url_for("Index")))
-        else:
-            flash("Invalid username or password")
-
-    return render_template('login.html', title='Log In', form=form)
-
-@app.route('/signup', methods=['GET', 'POST'])
-def Signup():
-    if g.user is not None and g.user.is_authenticated():
-        return redirect(url_for('Index'))
-
-    form = SignupForm()
-    if form.validate_on_submit():
-        user_name = form.user_name.data
-        password = form.password.data
-
-        user = User(user_name=user_name, password=password)
-        db.session.add(user)
-        db.session.commit()
-
-        return redirect(url_for('Login'))
-
-    return render_template('signup.html', title='Sign Up', form=form)
+    return render_template('login.html', title='Log In')
 
 @app.route('/logout')
 def Logout():
@@ -113,3 +62,39 @@ def BeforeRequest():
 @lm.user_loader
 def LoadUser(user_id):
     return User.query.get(int(user_id))
+
+#############OAuth Functions###############
+
+@app.route('/rdio/login')
+def RdioOAuthLogin():
+    requestTokenCredentials = GetRequestTokenCredentials('http://localhost:5000' + url_for('RdioLoginCallback'), rdioOAuth.client)
+    session["oauth_token_secret"] = requestTokenCredentials["oauth_token_secret"]
+    return redirect(CreateLoginString(requestTokenCredentials["login_url"], requestTokenCredentials["oauth_token"]))
+
+@app.route('/rdio/login/callback')
+def RdioLoginCallback():
+    requestToken = CreateRequestToken(request.args["oauth_token"], session["oauth_token_secret"])
+    requestToken.set_verifier(request.args["oauth_verifier"])
+    
+    accessTokenCredentials = GetAccessTokenCredentials(rdioOAuth.consumer, requestToken)
+    rdioCurrentUser = RdioGetCurrentUser(accessTokenCredentials["oauth_token"], 
+                                         accessTokenCredentials["oauth_token_secret"], 
+                                         rdioOAuth.consumer)
+
+    #See if user currently exists.
+    #If the user does not exist create it.
+    #Otherwise update the access token.
+    user = User.query.filter_by(client_key=rdioCurrentUser["result"]["key"]).first()
+    if user is None:
+        user = User(client_key=rdioCurrentUser["result"]["key"], 
+                    user_name=accessTokenCredentials["oauth_token"], 
+                    password=accessTokenCredentials["oauth_token_secret"])
+        db.session.add(user)
+    else:      
+        user.user_name = accessTokenCredentials["oauth_token"]
+        user.password = accessTokenCredentials["oauth_token_secret"]
+    
+    db.session.commit()
+    login_user(user) 
+
+    return redirect(url_for("Index"))

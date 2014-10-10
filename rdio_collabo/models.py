@@ -4,6 +4,7 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_name = db.Column(db.String(120), index=True, unique=True)
     password = db.Column(db.String(120), index=True)
+    client_key = db.Column(db.String(120), index=True)
 
     # login manager required functions
     def is_authenticated(self):
