@@ -11,3 +11,7 @@ class SignupForm(Form):
     user_name = TextField('user_name', validators=[Required(), Email(message=u'Invalid email address')])
     password = PasswordField('password', validators=[Required(), EqualTo('confirm_password', message='Passwords must match')])
     confirm_password = PasswordField('confirm_password', validators=[Required()])
+
+class PlaylistForm(Form):
+    name = TextField('name', validators=[Required()])
+    description = TextField('description')

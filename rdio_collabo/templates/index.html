@@ -5,12 +5,20 @@
 {% endblock %}
 
 {% block content %}
+<!-- Our very own csrf token -->
+<meta name="csrf-token" content="{{ csrf_token() }}">
+
 <h1>Start a Playlist</h1>
 
 <!-- Create a Playlist -->
-<form method="POST" id="create-playlist">
-<input id="playlist-name">
-<button type="submit">Create new playlist</button>
+<form id="create-playlist">
+	<div class="form-group">
+		<label for="playlist-name">Name</label>
+		<input class="form-control" id="playlist-name">
+		<label for="playlist-description">Description</label>
+		<textarea class="form-control" rows="3" id="playlist-description"></textarea>
+	</div>
+	<button class="btn btn-default" type="submit">Create new playlist</button>
 </form>
 
 <h1>Nearby Playlists</h1>

@@ -1,11 +1,13 @@
+# flask related functions
 from flask import render_template, url_for, redirect, g, request, jsonify, session
 from flask.ext.login import login_user, logout_user, current_user, login_required
 from rdio_collabo import app, db, lm, rdioOAuth
-from models import User, Playlist
-from OAuthClasses.RdioOAuth import GetRequestTokenCredentials, CreateLoginString, CreateRequestToken, GetAccessTokenCredentials, RdioGetCurrentUser
+from .forms import PlaylistForm
+from .models import User, Playlist
 
-#rdio-collabo ported modules
-import webservice # An interface to an external music API.
+
+# OAuth related functions.
+from OAuthClasses.RdioOAuth import GetRequestTokenCredentials, CreateLoginString, CreateRequestToken, GetAccessTokenCredentials, RdioGetCurrentUser, RdioCreatePlaylist
 
 
 #################Template Rendering Functions##############
@@ -15,13 +17,16 @@ import webservice # An interface to an external music API.
 def Index():
     return render_template('index.html')
 
-@app.route('/playlists/new/<name>', methods=['POST'])
-def NewPlaylist(name):
-    webservice.newPlaylist(name)
-    playlist = Playlist(name=name)
-    db.session.add(playlist)
-    db.session.commit()
-    return render_template('playlist.html', name=name)
+@app.route('/playlists/create', methods=['POST'])
+def CreatePlaylist():
+    form = PlaylistForm()
+
+    if form.validate_on_submit():
+        playlistInfo = {}
+        playlistInfo['name'] = form.name.data
+        playlistInfo['description'] = form.description.data
+        return jsonify(RdioCreatePlaylist(g.user.user_name, g.user.password, rdioOAuth.consumer, playlistInfo))
+    return jsonify({'fail': 'you lose!'})
 
 @app.route('/playlists/nearby', methods=['POST'])
 def NearbyPlaylist():

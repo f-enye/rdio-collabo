@@ -15,10 +15,14 @@ RdioCollaborationModes = {
     'CollaborateFollowedUsers': 2
     }
 
+RDIO_REQUEST_TOKEN_URL = 'http://api.rdio.com/oauth/request_token'
+RDIO_ACCESS_TOKEN_URL = 'http://api.rdio.com/oauth/access_token'
+RDIO_API_URL = 'http://api.rdio.com/1/'
+
 # Request Token Functions
 
 def GetRequestTokenCredentials(callback, client):
-    response, content = client.request('http://api.rdio.com/oauth/request_token', 'POST', urllib.urlencode({'oauth_callback':callback}))
+    response, content = client.request(RDIO_REQUEST_TOKEN_URL, 'POST', urllib.urlencode({'oauth_callback':callback}))
     return dict(urlparse.parse_qsl(content)) 
 
 def CreateLoginString(loginURL, oauthToken):
@@ -30,7 +34,7 @@ def CreateRequestToken(oauthToken, oauthTokenSecret):
 def GetAccessTokenCredentials(consumer, requestToken):
     # upgrade the request token to an access token
     client = oauth.Client(consumer, requestToken)
-    response, content = client.request('http://api.rdio.com/oauth/access_token', 'POST')
+    response, content = client.request(RDIO_ACCESS_TOKEN_URL, 'POST')
     # return access token credentials
     return dict(urlparse.parse_qsl(content))
 
@@ -41,7 +45,7 @@ def RdioGetCurrentUser(oauthToken, oauthTokenSecret, consumer):
     accessToken = oauth.Token(oauthToken, oauthTokenSecret)
 
     client = oauth.Client(consumer, accessToken)
-    response, content = client.request('http://api.rdio.com/1/', 'POST', urllib.urlencode({'method': 'currentUser'}))
+    response, content = client.request(RDIO_API_URL, 'POST', urllib.urlencode({'method': 'currentUser'}))
     return json.loads(content)
 
 def RdioCreatePlaylist(oauthToken, oauthTokenSecret, consumer, playlistInfo):
@@ -51,12 +55,17 @@ def RdioCreatePlaylist(oauthToken, oauthTokenSecret, consumer, playlistInfo):
 
     client = oauth.Client(consumer, accessToken)
     
-    response, content = client.request('http://api.rdio.com/1/', 'POST', 
+    # We require the playlist name, description, and tracks.
+    # The tracks field can have string with white space to indicate we don't want to
+    # include tracks yet.
+    # We set the collaboration Mode of the playlist to collaborate with all users.
+    response, content = client.request(RDIO_API_URL, 'POST', 
                                        urllib.urlencode({'method': 'createPlaylist', 
                                                          'name': playlistInfo['name'], 
                                                          'description': playlistInfo['description'], 
-                                                         'tracks': playlistInfo['tracks'], 
+                                                         'tracks': " ", 
                                                          'collaborationMode': RdioCollaborationModes['CollaborateAllUsers']}))
+    return json.loads(content)
 
 class RdioAuthenticator(object):
     """docstring for RdioAuthenticator"""
