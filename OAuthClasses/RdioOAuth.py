@@ -52,7 +52,6 @@ def RdioCreatePlaylist(oauthToken, oauthTokenSecret, consumer, playlistInfo):
     #Create a playlist
     accessToken = oauth.Token(oauthToken, oauthTokenSecret)
 
-
     client = oauth.Client(consumer, accessToken)
     
     # We require the playlist name, description, and tracks.
@@ -66,6 +65,15 @@ def RdioCreatePlaylist(oauthToken, oauthTokenSecret, consumer, playlistInfo):
                                                          'tracks': " ", 
                                                          'collaborationMode': RdioCollaborationModes['CollaborateAllUsers']}))
     return json.loads(content)
+
+def RdioGetPlaylists(userKey, consumer):
+    #Get playlists
+    client = oauth.Client(consumer)
+
+    response, content = client.request(RDIO_API_URL, 'POST', 
+                                       urllib.urlencode({'method': 'getPlaylists', 'user': userKey}))
+    return json.loads(content)
+
 
 class RdioAuthenticator(object):
     """docstring for RdioAuthenticator"""

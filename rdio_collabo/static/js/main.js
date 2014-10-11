@@ -32,7 +32,10 @@ app = {
        'description': description,
        'csrf_token': csrfToken },
       function(data){
-        console.log(data);
+        if(data['status'] === 'ok')
+        {
+          $("#owner-playlists").append(data['result']['name']);
+        }
     });
   },
 

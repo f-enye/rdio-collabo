@@ -21,6 +21,14 @@
 	<button class="btn btn-default" type="submit">Create new playlist</button>
 </form>
 
+<h1>Your Playlists</h1>
+<!-- Your playlists displayed -->
+<ul id="owner-playlists">
+	{% for playlist in ownerPlaylists %}
+		<li>{{ playlist }}</li>
+	{% endfor %}
+</ul>
+
 <h1>Nearby Playlists</h1>
 <div id="nearby"></div>
 <!-- TODO: List nearby playlists -->

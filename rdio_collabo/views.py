@@ -7,7 +7,7 @@ from .models import User, Playlist
 
 
 # OAuth related functions.
-from OAuthClasses.RdioOAuth import GetRequestTokenCredentials, CreateLoginString, CreateRequestToken, GetAccessTokenCredentials, RdioGetCurrentUser, RdioCreatePlaylist
+from OAuthClasses.RdioOAuth import GetRequestTokenCredentials, CreateLoginString, CreateRequestToken, GetAccessTokenCredentials, RdioGetCurrentUser, RdioCreatePlaylist, RdioGetPlaylists
 
 
 #################Template Rendering Functions##############
@@ -15,7 +15,13 @@ from OAuthClasses.RdioOAuth import GetRequestTokenCredentials, CreateLoginString
 @app.route('/index')
 @login_required
 def Index():
-    return render_template('index.html')
+    playlists = RdioGetPlaylists(g.user.client_key, rdioOAuth.consumer)
+    ownerPlaylists = [playlist['name'] for playlist in playlists['result']['owned']]
+    return render_template('index.html', ownerPlaylists=ownerPlaylists)
+
+@app.route('/playlists', methods=['GET'])
+def  GetPlaylists():
+    return jsonify(RdioGetPlaylists(g.user.client_key, rdioOAuth.consumer))
 
 @app.route('/playlists/create', methods=['POST'])
 def CreatePlaylist():
