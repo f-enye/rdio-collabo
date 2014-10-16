@@ -1,115 +1,136 @@
 $(document).ready(function() {
 
-  /* New playlist button: Makes AJAX call to request new empty playlist.*/
-  $('#create-playlist').submit(function(){
+  
+  $("#search-playlists").submit(function(event){
     event.preventDefault();
 
-    var name = $('#playlist-name').val();
-    var description = $('#playlist-description').val();
-    var csrfToken = $('meta[name=csrf-token').attr('content')
-    app.CreatePlaylist(name, description, csrfToken);
+    var playlistQuery = $("search-playlists-query").val();
+    var csrfToken = $('meta[name=csrf-token]').attr('content');
+
+    backendHandler.SearchPlaylists(query, csrfToken, view.ShowSearchResults);
   });
 
-  // $('#nearby').text('Searching for nearby playlists...');
-  // app.nearby();
+  $('#create-playlist').submit(function(event){
+    event.preventDefault();
+
+    // Get field values
+    var name = $('#playlist-name').val();
+    var description = $('#playlist-description').val();
+    var csrfToken = $('meta[name=csrf-token').attr('content');
+    
+    // Clear field values
+    view.TogglePlaylistCreateControls();
+
+    backendHandler.CreatePlaylist(name, description, csrfToken, view.UpdateListOfPlaylists);
+  });
 
   /* Search Button: Makes AJAX call to make search request */
   $('#search').click(function(){
     $('#results').text('Loading...');
     var query = $('#query').val();
-    app.search(query);
-  })
+    var csrfToken = $('meta[name=csrf-token]').attr('content');
+    backendHandler.SearchAlbumsArtistsTracks(query, csrfToken, view.PrintSearchResults);
+  });
+
+  $('#start-playlist-creation').click(function(){
+    view.TogglePlaylistCreateControls();
+  });
+
+  $('#cancel-playlist-creation').click(function(){
+    view.TogglePlaylistCreateControls();
+  });
 
 });
 
-/* App deals with logic for making AJAX calls.
-View deals with displaying the page.
-These objects are tightly coupled. :| */
-app = {
-  CreatePlaylist: function(name, description, csrfToken){
+backendHandler = {
+  CreatePlaylist: function(name, description, csrfToken, viewFunction){
     $.post('/playlists/create', 
       {'name': name,
        'description': description,
        'csrf_token': csrfToken },
-      function(data){
-        if(data['status'] === 'ok')
-        {
-          $("#owner-playlists").append(data['result']['name']);
-        }
-    });
+        function(data){
+          if('ok' === data['status'])
+          { 
+            // format data for view function.
+            var result = data['result'];
+            viewFunction(result);
+          }
+      }
+    );
   },
 
-  nearby: function(){
-    $.post("/playlists/nearby", function(data, textStatus){
-      console.log(textStatus);
-      if(data == 0)
-        view.printNoNearby();
-      else{
-        view.printNearby(data);
+  SearchAlbumsArtistsTracks: function(query, csrfToken, viewFunction){
+    $.ajax({url: "/search/" + query, 
+      type: 'POST',
+      dataType:'json',
+      beforeSend:function(xhr){
+        xhr.setRequestHeader('X-CSRFToken', csrfToken);
+      },
+      success: function(data){
+        if('ok' === data['status'])
+        {
+          // format data for view function.
+          var result = data['result']['results'];
+          viewFunction(result);
+        }
       }
     });
   },
 
-  // search: function(query){
-  //   var self = this;
-  //   $.post("/search/" + query, function(data, textStatus){
-  //     var data = $.parseJSON(data);
-  //     view.printResults(data);
-  //     self.handleAdd();
-  //   })
-  // },
-
-  // handleAdd: function(){
-  //   var self = this;
-  //   $(".add").click(function(){
-  //     $.post("/add/" + this.id, function(data, textStatus){
-  //       self.playlist = $.parseJSON(data);
-  //       view.printPlaylist();
-  //     });
-  //   })
-  // }
+  SearchPlaylists: function(query, csrfToken, viewFunction){
+    $.post('/search/playlists', 
+      {
+        'query': query, 
+        'csrf_token': csrfToken
+      }, 
+      function(data){
+        if('ok' === data['status'])
+        {
+          // format data for view function
+          console.log(data);
+          //viewFunction();
+        }
+    });
+  }
 };
 
-// view = {
-//   printPlaylist: function(){
-//     $("#results").html("Song added to playlist.");
-//     $("#results").after("<ul id='playlist'>");
-//     $.each(app.playlist, function(id, track) {
-//       $("#playlist").append("<li><ul id='playlist-" + id       + "'>");
-//       $("#playlist-" + id).append("Song: "        + track['name']  + "<br>");
-//       $("#playlist-" + id).append("Artist: "          + track['artist']    + "<br>");
-//       $("#playlist-" + id).append("Album: "          + track['album']    + "<br>");
-//     })
-//   },
+view = {
+  TogglePlaylistCreateControls: function(){
+    // Hide the start playlist creation button.
+    $("#start-playlist-creation").toggle();
 
-//   printResults: function(data){
-//     $("#results").html("<ul id='results-list'>");
+    // Reset the form.
+    $('#create-playlist')[0].reset();
+    
+    // Hide the form.
+    $('#create-playlist').toggle();
+  },
 
-//     $.each(data, function(i, track) {
-//       var artist  = track["artist"];
-//       var name    = track["name"];
-//       var album   = track["album"];
-//       var art     = track["icon"];
-//       var id      = track["key"];
+  UpdateListOfPlaylists: function(result){
+    $('#owner-playlists').append(
+      $('<li></li>').append($('<a></a>').text(result['name']).attr(
+        'href', '/playlists/' + result['key'])));
+  },
 
-//       $("#results-list").append("<li><ul id='result-"       + i       + "'>");
-//       $("#result-"  + i).append("<button class='add' id='"  + id      + "'>+</button><br>");
-//       $("#result-"  + i).append("Artist: "                  + artist  + "<br>");
-//       $("#result-"  + i).append("Name: "                    + name    + "<br>");
-//       $("#result-"  + i).append("Album: "                   + album   + "<br>");
-//       $("#result-"  + i).append("Rdio identifier: "         + id      + "<br>");
-//       $("#result-"  + i).append("<img src='"                + art     + "'><br>");
-//     });    
-//   },
+  PrintSearchResults: function(result){
+    $("#results").html("<ul id='results-list'>");
 
-//   printNoNearby: function(){
-//     $("#nearby").text("No nearby playlists found. :(");
-//   },
+    $.each(result, function(i, track) {
+      var artist  = track["artist"];
+      var name    = track["name"];
+      var album   = track["album"];
+      var art     = track["icon"];
+      var id      = track["key"];
 
-//   printNearby: function(data){
-//     $("#nearby").text("");
-//     for (var i = 0; i < data["playlists"].length; i++) {
-//       $("#nearby").append(data["playlists"][i].name + "<br>");
-//     };
-//   }
-//};
+      $("#results-list").append("<li><ul id='result-"       + i       + "'>");
+      $("#result-"  + i).append("<button class='add btn btn-default' id='"  + id      + "'>+</button><br>");
+      $("#result-"  + i).append("Artist: "                  + artist  + "<br>");
+      $("#result-"  + i).append("Name: "                    + name    + "<br>");
+      $("#result-"  + i).append("Album: "                   + album   + "<br>");
+      $("#result-"  + i).append("Rdio identifier: "         + id      + "<br>");
+      $("#result-"  + i).append("<img src='"                + art     + "'><br>");
+    });    
+  },
+
+
+};

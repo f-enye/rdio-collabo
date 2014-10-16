@@ -15,6 +15,6 @@ lm.login_view = 'Login'
 csrf = CsrfProtect()
 csrf.init_app(app)
 
-rdioOAuth = RdioAuthenticator()
+rdioOAuthManager = RdioAuthenticator()
 
 from rdio_collabo import views, models

@@ -1,6 +1,8 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <!-- Our very own csrf token -->
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <script type="text/javascript" src="{{ url_for('static', filename='jQuery/jquery-2.1.1.js') }}"></script>
     <script type="text/javascript" src="{{ url_for('static', filename='bootstrap-3.2.0/js/bootstrap.js') }}"></script>
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='bootstrap-3.2.0/css/bootstrap.min.css') }}">
@@ -23,6 +25,8 @@
     {% endif %}
     {% endwith %}
     <div class="container">
+        <a href="{{ url_for('Index') }}"class="btn btn-default">Playlists</a>
+        <a href="{{ url_for('Voting') }}"class="btn btn-default">Voting</a>
         {% block content %}{% endblock %}
     </div>
 </body>

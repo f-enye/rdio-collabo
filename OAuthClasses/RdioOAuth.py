@@ -66,15 +66,25 @@ def RdioCreatePlaylist(oauthToken, oauthTokenSecret, consumer, playlistInfo):
                                                          'collaborationMode': RdioCollaborationModes['CollaborateAllUsers']}))
     return json.loads(content)
 
-def RdioGetPlaylists(userKey, consumer):
+def RdioGetPlaylists(userKey, oauthToken, oauthTokenSecret, consumer):
     #Get playlists
-    client = oauth.Client(consumer)
+    accessToken = oauth.Token(oauthToken, oauthTokenSecret)
+
+    client = oauth.Client(consumer, accessToken)
 
     response, content = client.request(RDIO_API_URL, 'POST', 
                                        urllib.urlencode({'method': 'getPlaylists', 'user': userKey}))
     return json.loads(content)
 
+def RdioSearch(query, oauthToken, oauthTokenSecret, consumer):
+    #Search for artist, album, track
+    accessToken = oauth.Token(oauthToken, oauthTokenSecret)
 
+    client = oauth.Client(consumer, accessToken)
+
+    response, content = client.request(RDIO_API_URL, 'POST',
+                                       urllib.urlencode({'method': 'search', 'query': query, 'types': 'Album,Artist,Track'}))
+    return json.loads(content)
 class RdioAuthenticator(object):
     """docstring for RdioAuthenticator"""
     
@@ -87,26 +97,3 @@ class RdioAuthenticator(object):
 
         # build client basked on consumer credentials. 
         self.client = oauth.Client(self.consumer)
-
-# Make API request to add song to a playlist
-def add(id):
-    # response, content = client.request('http://api.rdio.com/1/', 'POST',
-    #                                  urllib.urlencode({'method': 'get', 'keys': id}))
-
-    # json_data = json.loads(content)
-
-    # # TODO -- add to an Rdio playlist
-    # return json.dumps(json_data['result'])
-    pass
-  
-def newPlaylist(name):
-    return 1
-
-# Make API request to search for a song.
-def search(query):
-    # response, content = client.request('http://api.rdio.com/1/', 'POST', 
-    #                                     urllib.urlencode({'method': 'search', 'query': query, 'types': 'Track'}))
-    # # TODO: check the response
-    # json_data = json.loads(content)
-    # return json.dumps(json_data['result']['results'])
-    pass

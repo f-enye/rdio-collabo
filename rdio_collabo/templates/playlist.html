@@ -5,11 +5,12 @@
 {% endblock %}
 
 {% block content %}
-<!-- Display Playlist -->
-<h1>{{ name }}</h1>
 
-<!-- Search for a song -->
+<!-- Display Playlist -->
+<h1>{{ playlist.name }}</h1>
+
+<!-- Search for a song to nominate-->
 <input id="query">
-<button id="search">Search</button>
+<button class="btn btn-default" id="search">Search</button>
 <div id="results"></div>
 {% endblock %}

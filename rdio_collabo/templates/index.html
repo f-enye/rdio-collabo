@@ -5,31 +5,40 @@
 {% endblock %}
 
 {% block content %}
-<!-- Our very own csrf token -->
-<meta name="csrf-token" content="{{ csrf_token() }}">
+<div class="container">
+	<form id="search-playlists">
+		<div class="form-group">
+			<label for="search-playlists-query">Search Playlists</label>
+			<input class="form-control" id="search-playlist-query" type="text">
+		</div>
+		<button class="btn btn-default" type="submit">Search</button>
+	</form>
 
-<h1>Start a Playlist</h1>
+	<!-- Start playlist creation -->
+	<button class="btn btn-default" id="start-playlist-creation">Let's Create A Playlist</button>
 
-<!-- Create a Playlist -->
-<form id="create-playlist">
-	<div class="form-group">
-		<label for="playlist-name">Name</label>
-		<input class="form-control" id="playlist-name">
-		<label for="playlist-description">Description</label>
-		<textarea class="form-control" rows="3" id="playlist-description"></textarea>
-	</div>
-	<button class="btn btn-default" type="submit">Create new playlist</button>
-</form>
+	<!-- Create a Playlist -->
+	<div class="form-group"></div>
+	<form id="create-playlist" style="display:none">
+		<div class="form-group">
+			<label for="playlist-name">Name</label>
+			<input class="form-control" id="playlist-name">
+			<label for="playlist-description">Description</label>
+			<textarea class="form-control" rows="3" id="playlist-description"></textarea>
+		</div>
+		<button class="btn btn-default" type="submit">Create new playlist</button>
+		<button class="btn btn-default" id="cancel-playlist-creation" type="button">Cancel</button>
+	</form>
 
-<h1>Your Playlists</h1>
-<!-- Your playlists displayed -->
-<ul id="owner-playlists">
-	{% for playlist in ownerPlaylists %}
-		<li>{{ playlist }}</li>
-	{% endfor %}
-</ul>
+	<h1>Your Playlists</h1>
+	<!-- Your playlists displayed -->
+	<ul id="owner-playlists">
+		{% for playlist in ownerPlaylists | reverse %}
+			<li>
+				<a href="{{ url_for('Playlist', key=playlist.key) }}">{{ playlist.name }}</a>
+			</li>
+		{% endfor %}
+	</ul>
+</div>
 
-<h1>Nearby Playlists</h1>
-<div id="nearby"></div>
-<!-- TODO: List nearby playlists -->
 {% endblock %}
