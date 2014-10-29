@@ -1,16 +1,26 @@
 {% extends "base.html" %}
 
 {% block bundles %}
+<script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/0.9.16/socket.io.min.js"></script>
+<script src="{{ url_for('static', filename='js/backendHandler.js') }}"></script>
+<script src="{{ url_for('static', filename='js/view.js') }}"></script>
 <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+<script src="{{ url_for('static', filename='js/playlist.js')}}"></script>
 {% endblock %}
 
 {% block content %}
-
 <!-- Display Playlist -->
 <h1>{{ playlist.name }}</h1>
+<dl><dt>Share Code:</dt><dd id="share-code">{{ playlist.id }}</dd></dl>
 
-<!-- Search for a song to nominate-->
-<input id="query">
-<button class="btn btn-default" id="search">Search</button>
-<div id="results"></div>
+<form id="song-nomination-form">
+	<div id="song-search-control">
+		<!-- Search for songs to add-->
+		<div id="song-nominate-list"></div>
+		<input id="query-nominate">
+		<button class="btn btn-default" id="search-nominate" type="button">Search</button>
+		<div id="results"></div>
+	</div>
+	<button class="btn btn-default" id="submit-nomination">Nominate</button>
+</form>
 {% endblock %}

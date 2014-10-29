@@ -1,35 +1,39 @@
 # flask related functions
 from flask import render_template, url_for, redirect, g, request, jsonify, session
 from flask.ext.login import login_user, logout_user, current_user, login_required
-from rdio_collabo import app, db, lm, rdioOAuthManager
-from .forms import PlaylistForm
+from flask.ext.socketio import emit
+from rdio_collabo import app, db, lm, rdioOAuthManager, socketio
+from .forms import PlaylistForm, PlaylistSearchForm, AlbumsArtistsTracksSearchForm, AddTrackToPlaylistForm
 from .models import User as UserModel
 from .models import Playlist as PlaylistModel
+from .models import Track as TrackModel
 
 # OAuth related functions.
-from OAuthClasses.RdioOAuth import GetRequestTokenCredentials, CreateLoginString, CreateRequestToken, GetAccessTokenCredentials, RdioGetCurrentUser, RdioCreatePlaylist, RdioGetPlaylists, RdioSearch
+from OAuthClasses.RdioOAuth import (GetRequestTokenCredentials, CreateLoginString, 
+                                    CreateRequestToken, GetAccessTokenCredentials, 
+                                    RdioGetCurrentUser, RdioCreatePlaylist, 
+                                    RdioGetPlaylists, RdioSearchTracks,
+                                    RdioSearchPlaylists, RdioIsTrackKeyValid,
+                                    RdioAddTrackToPlaylist, RdioGetTrackInfo)
 
 #################Template Rendering Functions##############
 @app.route('/') 
 @app.route('/index')
 @login_required
 def Index():
-    playlists = RdioGetPlaylists(g.user.client_key, g.user.user_name, g.user.password, rdioOAuthManager.consumer)
-    ownerPlaylists = [{'key': playlist['key'], 'name': playlist['name']} 
-                      for playlist in playlists['result']['owned']]
+    playlists = PlaylistModel.query.all()
+    ownerPlaylists = [{'id': playlist.id, 'name': playlist.name}
+                      for playlist in playlists]
     return render_template('index.html', ownerPlaylists=ownerPlaylists)
 
-@app.route('/playlists/<key>', methods=['GET'])
-def Playlist(key):
-    playlists = RdioGetPlaylists(g.user.client_key, g.user.user_name, g.user.password, rdioOAuthManager.consumer)
-    # Since playlist keys should be unique, we should only be retrieving one playlist. It should be the,
-    # first and last one in the list.
-    selectPlaylist = [playlist for playlist in playlists['result']['owned'] if playlist['key'] == key][0]
-    return render_template('playlist.html', playlist=selectPlaylist)
+@app.route('/playlists/<id>', methods=['GET'])
+def Playlist(id):
+    playlist = PlaylistModel.query.filter_by(id=id).first()
+    return render_template('playlist.html', playlist=playlist)
 
 @app.route('/voting', methods=['GET'])
 def Voting():
-    return 'yo'
+    return render_template('voting.html')
 
 @app.route('/login', methods=['GET', 'POST'])
 def Login():
@@ -43,8 +47,12 @@ def Logout():
     logout_user()
     return redirect(url_for('Login'))
 
-###################Rdio API CALLS##########################
+######################Socket.IO Calls############################
+@socketio.on('connect', namespace='/playlist')
+def test_connect():
+    emit('my response', {'data': 'connected'})
 
+###################JSON Returning Calls##########################
 @app.route('/playlists/create', methods=['POST'])
 def CreatePlaylist():
     form = PlaylistForm()
@@ -53,13 +61,44 @@ def CreatePlaylist():
         playlistInfo = {}
         playlistInfo['name'] = form.name.data
         playlistInfo['description'] = form.description.data
-        return jsonify(RdioCreatePlaylist(g.user.user_name, g.user.password, rdioOAuthManager.consumer, playlistInfo))
-    return jsonify({'fail': 'you lose!'})
+        
+        playlist = PlaylistModel(name=playlistInfo['name'], description=playlistInfo['description'], user_id=g.user.id)
+        db.session.add(playlist)
+        db.session.commit()
+        return jsonify({'status': u'ok', 'result': playlist.serialize()})
+    return jsonify({'status': u'error', 'message': 'Invalid form data.'})
 
-@app.route('/search/<query>', methods=['POST'])
-def Search(query):
-    print query
-    return jsonify(RdioSearch(query, g.user.user_name, g.user.password, rdioOAuthManager.consumer))
+@app.route('/playlist/addTrack', methods=['POST'])
+def AddTrackToPlaylist():
+    form = AddTrackToPlaylistForm()
+
+    if form.validate_on_submit():
+        playlistKey = form.playlist_id.data
+        trackKey = form.track_rdioID.data
+
+        playlist = PlaylistModel.query.filter_by(id=playlistKey).first()
+        if playlist is not None:
+            trackInfo = RdioGetTrackInfo(trackKey, g.user.user_name, g.user.password, rdioOAuthManager.consumer)['result']
+            trackArtist = trackInfo[trackKey]['artist']
+            trackName = trackInfo[trackKey]['name']
+
+            track = TrackModel.query.filter_by(rdioID=trackKey).first()
+            if track is None:
+                track = TrackModel(artist=trackArtist, name=trackName, rdioID=trackKey)
+
+            playlist.tracks.append(track)
+            db.session.commit()
+            return jsonify({'status': u'ok'})
+
+    return jsonify({'status': 'error'})
+
+@app.route('/search/tracks', methods=['POST'])
+def SearchTracks():
+    form = AlbumsArtistsTracksSearchForm()
+
+    if form.validate_on_submit():
+        query = form.query.data
+        return jsonify(RdioSearchTracks(query, g.user.user_name, g.user.password, rdioOAuthManager.consumer))
 
 @app.route('/playlists/nearby', methods=['POST'])
 def NearbyPlaylist():
@@ -71,9 +110,13 @@ def NearbyPlaylist():
 
     return jsonify(dictPlaylist)
 
-@app.route('/add/<song_id>', methods=['POST'])
-def add(song_id):
-    return webservice.add(song_id)
+@app.route('/search/playlists', methods=['POST'])
+def SearchPlaylists():
+    form = PlaylistSearchForm()
+
+    if form.validate_on_submit():
+        query = form.query.data
+        return jsonify(RdioSearchPlaylists(query, g.user.user_name, g.user.password, rdioOAuthManager.consumer))
 
 #############Helper Functions##############
 @app.before_request

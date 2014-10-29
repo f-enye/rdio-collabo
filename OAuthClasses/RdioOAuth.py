@@ -76,15 +76,68 @@ def RdioGetPlaylists(userKey, oauthToken, oauthTokenSecret, consumer):
                                        urllib.urlencode({'method': 'getPlaylists', 'user': userKey}))
     return json.loads(content)
 
-def RdioSearch(query, oauthToken, oauthTokenSecret, consumer):
+def RdioSearchTracks(query, oauthToken, oauthTokenSecret, consumer):
     #Search for artist, album, track
     accessToken = oauth.Token(oauthToken, oauthTokenSecret)
 
     client = oauth.Client(consumer, accessToken)
 
     response, content = client.request(RDIO_API_URL, 'POST',
-                                       urllib.urlencode({'method': 'search', 'query': query, 'types': 'Album,Artist,Track'}))
+                                       urllib.urlencode({'method': 'search', 'query': query, 'types': 'Track'}))
     return json.loads(content)
+
+def RdioSearchPlaylists(query, oauthToken, oauthTokenSecret, consumer):
+    #Search for playlists
+    accessToken = oauth.Token(oauthToken, oauthTokenSecret)
+
+    client = oauth.Client(consumer, accessToken)
+
+    response, content = client.request(RDIO_API_URL, 'POST',
+                                       urllib.urlencode({'method': 'search', 'query': query, 'types': 'Playlist'}))
+    return json.loads(content)
+
+def RdioIsTrackKeyValid(trackKey, oauthToken, oauthTokenSecret, consumer):
+    # returns true or false based on whether the track key is valid or not.
+    trackKeyValid = False
+
+    accessToken = oauth.Token(oauthToken, oauthTokenSecret)
+    client = oauth.Client(consumer, accessToken)
+    response, content = client.request(RDIO_API_URL, 'POST', 
+                                       urllib.urlencode({'method': 'get', 'keys': trackKey}))
+    result = json.loads(content)
+
+    # check if status is ok.
+    if u'ok' == result['status']:
+        trackKeyValid = RdioResultValid(result['result'])
+
+    return trackKeyValid
+
+def RdioGetTrackInfo(trackKey, oauthToken, oauthTokenSecret, consumer):
+    #returns track info based on the given track key.
+    accessToken = oauth.Token(oauthToken, oauthTokenSecret)
+    client = oauth.Client(consumer, accessToken)
+    response, content = client.request(RDIO_API_URL, 'POST',
+                                       urllib.urlencode({'method': 'get', 'keys': trackKey}))
+
+    result = json.loads(content)
+    # check if status is ok
+    if u'ok' == result['status'] and RdioResultValid(result['result']):
+        return result
+    return {'status': 'error', 'message': 'Bad status, or invalid result.'}
+
+def RdioResultValid(result):
+    # the result returned should have valid tracks only, if the track is invalid, the dictionary should be empty.
+    return len(result) == 1
+def RdioAddTrackToPlaylist(playlistKey, trackKey, oauthToken, oauthTokenSecret, consumer):
+    # add track to playlist
+    accessToken = oauth.Token(oauthToken, oauthTokenSecret)
+    client = oauth.Client(consumer, accessToken)
+    response, content = client.request(RDIO_API_URL, 'POST',
+                                       urllib.urlencode({'method': 'addToPlaylist', 
+                                                         'playlist': playlistKey, 
+                                                         'tracks': trackKey}))
+    return json.loads(content)
+
 class RdioAuthenticator(object):
     """docstring for RdioAuthenticator"""
     

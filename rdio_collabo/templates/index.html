@@ -1,41 +1,48 @@
 {% extends "base.html" %}
 
 {% block bundles %}
+<script src="{{ url_for('static', filename='js/backendHandler.js') }}"></script>
+<script src="{{ url_for('static', filename='js/view.js') }}"></script>
 <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 {% endblock %}
 
 {% block content %}
 <div class="container">
-	<form id="search-playlists">
+	<!-- Search may not be a viable option at the moment because RDIO's db takes a while to update -->
+	<!-- <form id="search-playlists">
 		<div class="form-group">
 			<label for="search-playlists-query">Search Playlists</label>
-			<input class="form-control" id="search-playlist-query" type="text">
+			<input class="form-control" id="search-playlists-query" type="text">
 		</div>
 		<button class="btn btn-default" type="submit">Search</button>
-	</form>
-
-	<!-- Start playlist creation -->
-	<button class="btn btn-default" id="start-playlist-creation">Let's Create A Playlist</button>
+	</form> -->
 
 	<!-- Create a Playlist -->
-	<div class="form-group"></div>
-	<form id="create-playlist" style="display:none">
-		<div class="form-group">
-			<label for="playlist-name">Name</label>
-			<input class="form-control" id="playlist-name">
-			<label for="playlist-description">Description</label>
-			<textarea class="form-control" rows="3" id="playlist-description"></textarea>
-		</div>
-		<button class="btn btn-default" type="submit">Create new playlist</button>
-		<button class="btn btn-default" id="cancel-playlist-creation" type="button">Cancel</button>
-	</form>
+	<div id="create-playlist-controls">
+		<!-- Playlist Result -->
+		<div id="playlist-result" style="display:none"></div>
+
+		<!-- Start playlist creation -->
+		<button class="btn btn-default" id="start-playlist-creation">Let's Create A Playlist</button>
+
+		<form id="create-playlist" style="display:none">
+			<div class="form-group">
+				<label for="playlist-name">Name</label>
+				<input class="form-control" id="playlist-name">
+				<label for="playlist-description">Description</label>
+				<textarea class="form-control" rows="3" id="playlist-description"></textarea>
+			</div>
+			<button class="btn btn-default" type="submit">Create new playlist</button>
+			<button class="btn btn-default" id="cancel-playlist-creation" type="button">Cancel</button>
+		</form>
+	</div>
 
 	<h1>Your Playlists</h1>
 	<!-- Your playlists displayed -->
 	<ul id="owner-playlists">
 		{% for playlist in ownerPlaylists | reverse %}
 			<li>
-				<a href="{{ url_for('Playlist', key=playlist.key) }}">{{ playlist.name }}</a>
+				<a href="{{ url_for('Playlist', id=playlist.id) }}">{{ playlist.name }}</a>
 			</li>
 		{% endfor %}
 	</ul>
