@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block bundles %}
+<script src="{{ url_for('static', filename='js/backendHandler.js') }}"></script>
+<script src="{{ url_for('static', filename='js/view.js') }}"></script>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% endblock %}
+
+{% block content %}
+<h1>Song Nomination</h1>
+<form>
+	<div class="form-group">
+		<label for="playlist-nominate">Playlist</label>
+		<input class="form-control" id="playlist-nominate" type="text">
+	</div>
+	<div id="song-nominate-list"></div>
+	<div class="form-group">
+		<label for="query-nominate">Song Search</label>
+		<input class="form-control" id="query-nominate" type="text">
+		<button class="btn btn-default" id="search-nominate" type="button">Search</button>
+		<div id="results"></div>
+	</div>
+	<button class="btn btn-default" type="submit">Nominate For Playlist</button>
+</form>
+{% endblock %}

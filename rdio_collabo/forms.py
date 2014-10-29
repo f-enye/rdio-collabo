@@ -1,5 +1,5 @@
 from flask.ext.wtf import Form
-from wtforms import TextField, PasswordField
+from wtforms import TextField, PasswordField, IntegerField
 from wtforms.validators import Required, Email, EqualTo
 
 class LoginForm(Form):
@@ -15,3 +15,13 @@ class SignupForm(Form):
 class PlaylistForm(Form):
     name = TextField('name', validators=[Required()])
     description = TextField('description')
+
+class PlaylistSearchForm(Form):
+    query = TextField('query', validators=[Required()])
+
+class AlbumsArtistsTracksSearchForm(Form):
+    query = TextField('query', validators=[Required()])
+
+class AddTrackToPlaylistForm(Form):
+    playlist_id = IntegerField('playlist_key', validators=[Required()])
+    track_rdioID = TextField('track_key', validators=[Required()])

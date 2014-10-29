@@ -1,6 +1,7 @@
 from flask import Flask
 from flask.ext.sqlalchemy import SQLAlchemy
 from flask.ext.login import LoginManager
+from flask.ext.socketio import SocketIO
 from OAuthClasses.RdioOAuth import RdioAuthenticator
 from flask_wtf.csrf import CsrfProtect
 
@@ -14,6 +15,8 @@ lm.login_view = 'Login'
 
 csrf = CsrfProtect()
 csrf.init_app(app)
+
+socketio = SocketIO(app)
 
 rdioOAuthManager = RdioAuthenticator()
 
