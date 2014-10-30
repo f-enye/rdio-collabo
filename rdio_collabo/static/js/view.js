@@ -74,12 +74,12 @@ $(document).ready(function(){
       });
     },
 
-    UpdateAddSongSuccess: function(result){
-      console.log(result);
+    UpdateAddTrackSuccess: function(result){
+      $('#voting-section').append('<li>Name: ' + result['result']['name'] + ", By: " + result['result']['artist'] + '</li>');
     },
 
-    Connected: function(){
-      console.log('awww yea!');
-    }
+    UpdateJoined: function(result){
+      console.log(result);
+    },
   };
 });

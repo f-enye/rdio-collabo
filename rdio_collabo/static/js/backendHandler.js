@@ -48,15 +48,12 @@ $(document).ready(function(){
     //   });
     // },
 
-    AddSongToPlaylist: function(playlistKey, track, csrfToken, viewFunction){
-      $.post('/playlist/addTrack', 
-        { 
-          'playlist_id': playlistKey,
-          'track_rdioID': track['key'],
-          'csrf_token': csrfToken 
-        }, 
-        function(data){
-          viewFunction(data);
+    AddTrackToPlaylist: function(playlistKey, track, csrfToken, socket){
+      socket.emit('add track to playlist', 
+        {
+          playlist_id: playlistKey,
+          track_rdioID: track['key'],
+          csrf_token: csrfToken
         });
     },
   };

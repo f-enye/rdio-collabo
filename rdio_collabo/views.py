@@ -1,7 +1,7 @@
 # flask related functions
 from flask import render_template, url_for, redirect, g, request, jsonify, session
 from flask.ext.login import login_user, logout_user, current_user, login_required
-from flask.ext.socketio import emit
+from flask.ext.socketio import emit, join_room, leave_room
 from rdio_collabo import app, db, lm, rdioOAuthManager, socketio
 from .forms import PlaylistForm, PlaylistSearchForm, AlbumsArtistsTracksSearchForm, AddTrackToPlaylistForm
 from .models import User as UserModel
@@ -11,27 +11,29 @@ from .models import Track as TrackModel
 # OAuth related functions.
 from OAuthClasses.RdioOAuth import (GetRequestTokenCredentials, CreateLoginString, 
                                     CreateRequestToken, GetAccessTokenCredentials, 
-                                    RdioGetCurrentUser, RdioCreatePlaylist, 
-                                    RdioGetPlaylists, RdioSearchTracks,
-                                    RdioSearchPlaylists, RdioIsTrackKeyValid,
-                                    RdioAddTrackToPlaylist, RdioGetTrackInfo)
+                                    RdioGetCurrentUser, 
+                                    RdioSearchTracks,
+                                    RdioSearchPlaylists,
+                                    RdioGetTrackInfo)
 
 #################Template Rendering Functions##############
 @app.route('/') 
 @app.route('/index')
 @login_required
 def Index():
-    playlists = PlaylistModel.query.all()
+    playlists = PlaylistModel.query.filter_by(user_id=g.user.id)
     ownerPlaylists = [{'id': playlist.id, 'name': playlist.name}
                       for playlist in playlists]
     return render_template('index.html', ownerPlaylists=ownerPlaylists)
 
 @app.route('/playlists/<id>', methods=['GET'])
+@login_required
 def Playlist(id):
     playlist = PlaylistModel.query.filter_by(id=id).first()
     return render_template('playlist.html', playlist=playlist)
 
 @app.route('/voting', methods=['GET'])
+@login_required
 def Voting():
     return render_template('voting.html')
 
@@ -43,36 +45,43 @@ def Login():
     return render_template('login.html', title='Log In')
 
 @app.route('/logout')
+@login_required
 def Logout():
     logout_user()
     return redirect(url_for('Login'))
 
 ######################Socket.IO Calls############################
 @socketio.on('connect', namespace='/playlist')
-def test_connect():
-    emit('my response', {'data': 'connected'})
+@login_required
+def PlaylistConnect():
+    emit('playlist connect response', {'status': u'ok', 'message': u'connected'})
 
-###################JSON Returning Calls##########################
-@app.route('/playlists/create', methods=['POST'])
-def CreatePlaylist():
-    form = PlaylistForm()
+@socketio.on('join', namespace='/playlist')
+def OnJoin(data):
+    BeforeRequest()
+    join_room(data["room"])
 
-    if form.validate_on_submit():
-        playlistInfo = {}
-        playlistInfo['name'] = form.name.data
-        playlistInfo['description'] = form.description.data
-        
-        playlist = PlaylistModel(name=playlistInfo['name'], description=playlistInfo['description'], user_id=g.user.id)
-        db.session.add(playlist)
-        db.session.commit()
-        return jsonify({'status': u'ok', 'result': playlist.serialize()})
-    return jsonify({'status': u'error', 'message': 'Invalid form data.'})
+    message = g.user.user_name + " has entered room " + data["room"]
 
-@app.route('/playlist/addTrack', methods=['POST'])
-def AddTrackToPlaylist():
-    form = AddTrackToPlaylistForm()
+    print message
 
-    if form.validate_on_submit():
+    emit('room join response', {'status': u'ok', 'message': message}, room=data["room"])
+
+@socketio.on('leave', namespace='/playlist')
+def OnLeave(data):
+    BeforeRequest()
+    leave_room(data["room"])
+
+    emit('room left response', {'status': u'ok', 'message': g.user.user_name + " has left room " + data["room"]}, room=data["room"])
+
+@socketio.on('add track to playlist', namespace='/playlist')
+@login_required
+def AddTrackToPlaylist(message):
+    BeforeRequest()
+    response = {'status': u'error'}
+    form = AddTrackToPlaylistForm(playlist_id=message['playlist_id'], track_rdioID=message['track_rdioID'], csrf_token=message['csrf_token'])
+
+    if form.validate():
         playlistKey = form.playlist_id.data
         trackKey = form.track_rdioID.data
 
@@ -88,11 +97,28 @@ def AddTrackToPlaylist():
 
             playlist.tracks.append(track)
             db.session.commit()
-            return jsonify({'status': u'ok'})
+            response = {'status': u'ok', 'result': {'name': trackName, 'artist': trackArtist}}
+    emit('add track to playlist response', response, room=playlistKey)
 
-    return jsonify({'status': 'error'})
+###################JSON Returning Calls##########################
+@app.route('/playlists/create', methods=['POST'])
+@login_required
+def CreatePlaylist():
+    form = PlaylistForm()
+
+    if form.validate_on_submit():
+        playlistInfo = {}
+        playlistInfo['name'] = form.name.data
+        playlistInfo['description'] = form.description.data
+        
+        playlist = PlaylistModel(name=playlistInfo['name'], description=playlistInfo['description'], user_id=g.user.id)
+        db.session.add(playlist)
+        db.session.commit()
+        return jsonify({'status': u'ok', 'result': playlist.serialize()})
+    return jsonify({'status': u'error', 'message': 'Invalid form data.'})
 
 @app.route('/search/tracks', methods=['POST'])
+@login_required
 def SearchTracks():
     form = AlbumsArtistsTracksSearchForm()
 
@@ -101,6 +127,7 @@ def SearchTracks():
         return jsonify(RdioSearchTracks(query, g.user.user_name, g.user.password, rdioOAuthManager.consumer))
 
 @app.route('/playlists/nearby', methods=['POST'])
+@login_required
 def NearbyPlaylist():
     playlists = PlaylistModel.query.all()
     
@@ -111,6 +138,7 @@ def NearbyPlaylist():
     return jsonify(dictPlaylist)
 
 @app.route('/search/playlists', methods=['POST'])
+@login_required
 def SearchPlaylists():
     form = PlaylistSearchForm()
 
@@ -132,7 +160,7 @@ def LoadUser(user_id):
 
 @app.route('/rdio/login')
 def RdioOAuthLogin():
-    requestTokenCredentials = GetRequestTokenCredentials('http://localhost:5000' + url_for('RdioLoginCallback'), rdioOAuthManager.client)
+    requestTokenCredentials = GetRequestTokenCredentials('http://' + request.headers['Host'] + url_for('RdioLoginCallback'), rdioOAuthManager.client)
     session["oauth_token_secret"] = requestTokenCredentials["oauth_token_secret"]
     return redirect(CreateLoginString(requestTokenCredentials["login_url"], requestTokenCredentials["oauth_token"]))
 

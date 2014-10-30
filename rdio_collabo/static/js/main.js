@@ -8,6 +8,17 @@ $(document).ready(function() {
   //   backendHandler.SearchPlaylists(playlistQuery, csrfToken, view.ShowSearchResults);
   // });
 
+  $("#join-playlist").submit(function(event){
+      event.preventDefault();
+
+      // Get field values.
+      var playlistShareCode = $('#playlist-share-code').val();
+      var url = 'http://' + window.location.host + "/playlists/" + playlistShareCode;
+
+      console.log(window.location.host + "/playlists/" + playlistShareCode);
+      location.replace(url);
+  });
+
   $('#create-playlist').submit(function(event){
     // Stop submit from performing default actions.
     event.preventDefault();
@@ -31,26 +42,5 @@ $(document).ready(function() {
 
   $('#cancel-playlist-creation').click(function(){
     view.TogglePlaylistCreateControls();
-  });
-
-  /* Search Button: Makes AJAX call to make search request */
-  $('#search-nominate').click(function(){
-    $('#results').text('Loading...');
-    var query = $('#query-nominate').val();
-    var csrfToken = $('meta[name=csrf-token]').attr('content');
-    backendHandler.SearchTracks(query, csrfToken, view.PrintSearchResults);
-  });
-
-  $('#song-nomination-form').submit(function(event){
-    // Stop submit from performing default actions.
-    event.preventDefault();
-
-    // Get Fields
-    var track = {};
-    var playlist = $('#share-code').text();
-    track['key'] = $('#song-nominate-list').children("dl").children('#key').text();
-    var csrfToken = $('meta[name=csrf-token]').attr('content');
-
-    backendHandler.AddSongToPlaylist(playlist, track, csrfToken, view.UpdateAddSongSuccess);
   });
 });

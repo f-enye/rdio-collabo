@@ -4,7 +4,6 @@
 <script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/0.9.16/socket.io.min.js"></script>
 <script src="{{ url_for('static', filename='js/backendHandler.js') }}"></script>
 <script src="{{ url_for('static', filename='js/view.js') }}"></script>
-<script src="{{ url_for('static', filename='js/main.js') }}"></script>
 <script src="{{ url_for('static', filename='js/playlist.js')}}"></script>
 {% endblock %}
 
@@ -23,4 +22,11 @@
 	</div>
 	<button class="btn btn-default" id="submit-nomination">Nominate</button>
 </form>
+
+<!-- Voting List -->
+<ul id="voting-section">
+{% for track in playlist.tracks %}
+	<li>Name: {{track.name}}, By: {{ track.artist }}</li>
+{% endfor %}
+</ul>
 {% endblock %}
